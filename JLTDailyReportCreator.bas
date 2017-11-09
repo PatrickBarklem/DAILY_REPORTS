@@ -1,11 +1,11 @@
 Attribute VB_Name = "DailyReportCreator"
-Public noOfIncidents As Integer
+Public noOfIncidents As Integer ' Declared a global variable so that a value can be obtained from the userform.
 Sub JLT_Daily_Report()
 Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
 '
 ' JLT_Daily_Report Macro
 '
-' Keyboard Shortcut: Ctrl+l
+' Keyboard Shortcut: Ctrl+q
 '
     
     Dim TitleDate As String
@@ -15,10 +15,8 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     Dim IncidentCounter As Integer
     Dim TitleHeadings(3) As String
     Dim TitleSizes(3) As Integer
-    Dim RunOnceFlag As Boolean
     Dim StoreSender As String
     
-   
     TitleHeadings(0) = "Incident ID"
     TitleHeadings(1) = "Policy"
     TitleHeadings(2) = "Sender"
@@ -30,10 +28,10 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     TitleSizes(3) = 35
     
     
-    IncidentAmountForm.Show
+    IncidentAmountForm.Show ' Shows the form to enter the amount of incidents
 
-    Worksheets("Sheet1").Activate
-    Range("A4").Select
+    Worksheets("Sheet1").Activate   'Selects the sheet that contains the pivot table and goes to the first incident
+    Range("A4").Select              'Hard coded, but should never be different
     
     IncidentCounter = 0
     Set IncidentData = New Collection
@@ -57,10 +55,6 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
                         ActiveCell.Offset(1, 0).Select
                         NewIncident.ID = ActiveCell.Value
                         IncidentData.Add NewIncident
-                        Debug.Print IncidentData(IncidentCounter + 1).ID
-                        Debug.Print IncidentData(IncidentCounter + 1).Policy
-                        Debug.Print IncidentData(IncidentCounter + 1).Sender
-                        Debug.Print IncidentData(IncidentCounter + 1).Recipient
                         ActiveCell.Offset(1, 0).Select
                         IncidentCounter = IncidentCounter + 1
                     Else
@@ -70,205 +64,131 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
             End If
         End If
     Loop
-        
-        
-        
-        
+           
     With ThisWorkbook
         .Sheets.Add(After:=.Sheets(.Sheets.Count)).Name = "Report Table"
     End With
-    
-    
-    If Weekday(Date) <> 2 Then
-        TitleDate = Format(Date - 1, "dd-mm-yyyy")
-    Else
-        TitleDate = Format(Date - 3, "dd-mm-yyyy") & " - " & Format(Date - 1, "dd-mm-yyyy")
-    End If
-    
+     
     With Range("B2:E2")
         .Merge
-        .Select
-    End With
-    Call Thick_Border
-    With Selection
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
-    End With
-    With Selection.Interior
-        .Pattern = xlSolid
-        .PatternColorIndex = xlAutomatic
-        .ThemeColor = xlThemeColorDark1
-        .TintAndShade = -0.349986266670736
-        .PatternTintAndShade = 0
-    End With
-    
-    ActiveCell.FormulaR1C1 = "Personal Address Report for " & TitleDate
-    With Selection.Font
-        .Name = "Calibri"
-        .Size = 16
-        .Strikethrough = False
-        .Superscript = False
-        .Subscript = False
-        .OutlineFont = False
-        .Shadow = False
-        .Bold = True
-        .Underline = xlUnderlineStyleSingle
-        .ThemeColor = xlThemeColorLight1
-        .TintAndShade = 0
-        .ThemeFont = xlThemeFontMinor
+        .Interior.Pattern = xlSolid
+        .FormulaR1C1 = "Personal Address Report for " & Get_Title_Date()
+        .Interior.TintAndShade = -0.349986266670736
+        .Font.Name = "Calibri"
+        .Font.Size = 16
+        .Font.Bold = True
+        .Font.Underline = xlUnderlineStyleSingle
     End With
     
-    With Range("B3:E3")
-        .Merge
-        .Select
+    Range("B3:E3").Merge
+    
+    Call Thick_Border(Range("B2:E3"), 1)
+    
+    With Range("B4:E4")
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+        .RowHeight = 22.5
+        .Font.Name = "Calibri"
+        .Font.Size = 11
+        .Font.Bold = True
     End With
-    Call Thick_Border
-    Range("B4").Select
+    Call Thick_Border(Range("B4:E4"), 1)
     For LoopCounter = 1 To 4
-        ActiveCell.FormulaR1C1 = TitleHeadings(LoopCounter - 1)
-        ActiveCell.ColumnWidth = TitleSizes(LoopCounter - 1)
-        ActiveCell.RowHeight = 22.5
-        With Selection
-                .HorizontalAlignment = xlCenter
-                .VerticalAlignment = xlCenter
-                .WrapText = True
-                .Orientation = 0
-                .AddIndent = False
-                .IndentLevel = 0
-                .ShrinkToFit = False
-                .ReadingOrder = xlContext
-                .MergeCells = False
-            End With
-            With Selection.Font
-                .Name = "Calibri"
-                .Size = 11
-                .Strikethrough = False
-                .Superscript = False
-                .Subscript = False
-                .OutlineFont = False
-                .Shadow = False
-                .Bold = True
-                .Underline = xlUnderlineStyleNone
-                .ThemeColor = xlThemeColorLight1
-                .TintAndShade = 0
-                .ThemeFont = xlThemeFontNone
-            End With
-        Call Thick_Border
-        ActiveCell.Offset(0, 1).Select
+        With Cells(4, LoopCounter + 1)
+            .FormulaR1C1 = TitleHeadings(LoopCounter - 1)
+            .ColumnWidth = TitleSizes(LoopCounter - 1)
+            .RowHeight = 22.5
+        End With
     Next LoopCounter
     Range("B5").Select
     Create_Incident_Rows (IncidentData.Count)
     Range("B5").Select
     Call Populate_Rows(IncidentData, IncidentData.Count)
     
-    
-    
 End Sub
-Function Thick_Border()
-
-    With Selection.Borders(xlEdgeLeft)
-        .LineStyle = xlContinuous
-        .ColorIndex = 0
-        .TintAndShade = 0
-        .Weight = xlMedium
-    End With
-    With Selection.Borders(xlEdgeTop)
-        .LineStyle = xlContinuous
-        .ColorIndex = 0
-        .TintAndShade = 0
-        .Weight = xlMedium
-    End With
-    With Selection.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .ColorIndex = 0
-        .TintAndShade = 0
-        .Weight = xlMedium
-    End With
-    With Selection.Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .ColorIndex = 0
-        .TintAndShade = 0
-        .Weight = xlMedium
-    End With
+Function Thick_Border(CellRange As Range, Optional a As Integer)
+    
+    If a = 1 Then
+        With CellRange.Borders
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+        End With
+    Else
+        With CellRange.Borders(xlEdgeTop)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+        End With
+        With CellRange.Borders(xlEdgeBottom)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+        End With
+        With CellRange.Borders(xlEdgeLeft)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+        End With
+        With CellRange.Borders(xlEdgeRight)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+        End With
+    End If
+    
 End Function
-
 Function Create_Incident_Rows(Length As Integer)
+    
     Dim CounterName As Integer
     Dim InnerLoopCounter As Integer
-    Dim columnLetter As String
     
     For CounterName = 1 To Length
+        With Range(ActiveCell, Cells(ActiveCell.Row, ActiveCell.Column + 3))
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlCenter
+            .WrapText = True
+            .Interior.Pattern = xlSolid
+            .Interior.TintAndShade = -0.149998474074526
+            .Font.Name = "Calibri"
+            .Font.Size = 11
+            .Borders(xlEdgeBottom).LineStyle = xlContinuous
+            .Borders(xlEdgeBottom).Weight = xlThin
+        End With
         For InnerLoopCounter = 1 To 4
-            With Selection.Interior
-                .Pattern = xlSolid
-                .PatternColorIndex = xlAutomatic
-                .ThemeColor = xlThemeColorDark1
-                .TintAndShade = -0.149998474074526
-                .PatternTintAndShade = 0
-            End With
-            With Selection
-                .HorizontalAlignment = xlCenter
-                .VerticalAlignment = xlCenter
-                .WrapText = True
-                .Orientation = 0
-                .AddIndent = False
-                .IndentLevel = 0
-                .ShrinkToFit = False
-                .ReadingOrder = xlContext
-                .MergeCells = False
-            End With
-            With Selection.Font
-                .Name = "Calibri"
-                .Size = 11
-                .Strikethrough = False
-                .Superscript = False
-                .Subscript = False
-                .OutlineFont = False
-                .Shadow = False
-                .Underline = xlUnderlineStyleNone
-                .ThemeColor = xlThemeColorLight1
-                .TintAndShade = 0
-                .ThemeFont = xlThemeFontNone
-            End With
             If InnerLoopCounter = 3 Then
-                With Selection.Font
-                    .Color = -2778277
-                    .TintAndShade = 0
-                End With
+                Selection.Font.Color = -2778277
             ElseIf InnerLoopCounter = 4 Then
-                With Selection.Font
-                    .Color = -16776961
-                    .TintAndShade = 0
-                End With
+                Selection.Font.Color = -16776961
             End If
-            With Selection.Borders(xlEdgeBottom)
-                .LineStyle = xlContinuous
-                .ColorIndex = 0
-                .TintAndShade = 0
-                .Weight = xlThin
-            End With
-            Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ActiveCell.Row + 1, ActiveCell.Column)).Select
-            Call Thick_Border
+            Call Thick_Border(Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ActiveCell.Row + 1, ActiveCell.Column)))
             ActiveCell.Offset(0, 1).Select
         Next InnerLoopCounter
         ActiveCell.Offset(2, -4).Select
     Next CounterName
 
 End Function
-
 Function Populate_Rows(Data As Object, Length As Integer)
     Dim CounterName As Integer
+    Dim RowCounter As Integer
+    Dim CurrentRow As Integer
+    Dim CurrentColumn As Integer
+    
+    CurrentColumn = ActiveCell.Column
+    RowCounter = ActiveCell.Row
     
     For CounterName = 1 To Length
-        ActiveCell.FormulaR1C1 = Data(CounterName).ID
-        ActiveCell.Offset(0, 1).Select
-        ActiveCell.FormulaR1C1 = Data(CounterName).Policy
-        ActiveCell.Offset(0, 1).Select
-        ActiveCell.FormulaR1C1 = Data(CounterName).Sender
-        ActiveCell.Offset(0, 1).Select
-        ActiveCell.FormulaR1C1 = Data(CounterName).Recipient
-        ActiveCell.Offset(2, -3).Select
+        Cells(RowCounter, CurrentColumn).FormulaR1C1 = Data(CounterName).ID
+        Cells(RowCounter, CurrentColumn + 1).FormulaR1C1 = Data(CounterName).Policy
+        Cells(RowCounter, CurrentColumn + 2).FormulaR1C1 = Data(CounterName).Sender
+        Cells(RowCounter, CurrentColumn + 3).FormulaR1C1 = Data(CounterName).Recipient
+        RowCounter = RowCounter + 2
     Next CounterName
 
+End Function
+Function Get_Title_Date() As String
+    If Weekday(Date) <> 2 Then
+        Get_Title_Date = Format(Date - 1, "dd-mm-yyyy")
+    Else
+        Get_Title_Date = Format(Date - 3, "dd-mm-yyyy") & " - " & Format(Date - 1, "dd-mm-yyyy")
+    End If
 End Function
 
