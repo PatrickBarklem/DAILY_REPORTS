@@ -1,5 +1,4 @@
 Attribute VB_Name = "DailyReportCreator"
-Public noOfIncidents As Integer ' Declared a global variable so that a value can be obtained from the userform.
 Public GlobalRowCounter As Integer
 
 Sub JLT_Daily_Report()
@@ -18,6 +17,7 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     Dim TitleHeadings(3) As String
     Dim TitleSizes(3) As Integer
     Dim StoreSender As String
+    Dim TableStart As Integer
     
     GlobalRowCounter = 1
     
@@ -31,33 +31,38 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     TitleSizes(2) = 36.86
     TitleSizes(3) = 35
     
-    
-    
-    IncidentAmountForm.Show ' Shows the form to enter the amount of incidents
+    noOfIncidents = 0
 
     Worksheets("Sheet1").Activate   'Selects the sheet that contains the pivot table and goes to the first incident
 
     Call Current_Cell
         
-    'Do
-    '    Call inc(RowCounter)
-    'Loop Until Check_If_At_Table(Current_Cell) = True
-
-    'Do While IsEmpty(Current_Cell) = False
-    '    If InStr(Current_Cell.Value, "@") > 0 Then
-    '       If Current_Cell.Interior
-    '    End If
-    'Loop
+    Do
+        Call inc(GlobalRowCounter)
+    Loop Until Check_If_At_Table(Current_Cell) = True
+    
+    TableStart = GlobalRowCounter
+    
+    Do While IsEmpty(Current_Cell) = False
+        If InStr(Current_Cell.Value, "@") > 0 Then
+            If Current_Cell.PivotField.Value = "Recipient(s)" Then
+                Do
+                    If Current_Cell.Interior.ColorIndex <> xlNone And Current_Cell.PivotField.Value = "Recipient(s)" Then
+                        Call inc(noOfIncidents)
+                    End If
+                    Call inc(GlobalRowCounter)
+                Loop Until Current_Cell.PivotField.Value = "Sender"
+            End If
+        End If
+        Call inc(GlobalRowCounter)
+    Loop
     
     
     Set IncidentData = New Collection
+    GlobalRowCounter = TableStart
     
     Do While IncidentCounter <> noOfIncidents
-        
-        If Current_Cell.Interior.ColorIndex = xlNone Then
-            Call inc(GlobalRowCounter)
-        Else
-            StoreSender = Current_Cell.Value
+            If Current_Cell.Interior.ColorIndex <> xlNone Then StoreSender = Current_Cell.Value
             Call inc(GlobalRowCounter)
             If Current_Cell.PivotField.Value = "Recipient(s)" Then
                 Do
@@ -80,7 +85,7 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
                     Call inc(GlobalRowCounter)
                 Loop Until Current_Cell.PivotField.Value = "Sender"
             End If
-        End If
+        'End If
     Loop
            
     With ThisWorkbook
