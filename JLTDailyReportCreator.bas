@@ -1,5 +1,6 @@
 Attribute VB_Name = "DailyReportCreator"
-Public noOfIncidents As Integer ' Declared a global variable so that a value can be obtained from the userform.
+Public GlobalRowCounter As Integer
+
 Sub JLT_Daily_Report()
 Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
 '
@@ -12,10 +13,14 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     Dim LoopCounter As Integer
     Dim IncidentData As Collection
     Dim NewIncident As Incident
-    Dim IncidentCounter As Integer
+    Dim IncidentCounter As Integer: IncidentCounter = 0
     Dim TitleHeadings(3) As String
     Dim TitleSizes(3) As Integer
     Dim StoreSender As String
+    Dim TableStart As Integer
+    Dim noOfIncidents As Integer: noOfIncidents = 0
+    
+    GlobalRowCounter = 1
     
     TitleHeadings(0) = "Incident ID"
     TitleHeadings(1) = "Policy"
@@ -28,41 +33,60 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     TitleSizes(3) = 35
     
     
-    IncidentAmountForm.Show ' Shows the form to enter the amount of incidents
 
     Worksheets("Sheet1").Activate   'Selects the sheet that contains the pivot table and goes to the first incident
-    Range("A4").Select              'Hard coded, but should never be different
-    
-    IncidentCounter = 0
-    Set IncidentData = New Collection
-    
-    Do While IncidentCounter <> noOfIncidents
+
+    Call Current_Cell
         
-        If ActiveCell.Interior.ColorIndex = xlNone Then
-            ActiveCell.Offset(1, 0).Select
-        Else
-            StoreSender = ActiveCell.Value
-            ActiveCell.Offset(1, 0).Select
-            If ActiveCell.PivotField.Value = "Recipient(s)" Then
+    Do
+        Call inc(GlobalRowCounter)
+    Loop Until Check_If_At_Table(Current_Cell) = True
+    
+    TableStart = GlobalRowCounter
+    
+    Do While IsEmpty(Current_Cell) = False
+        If InStr(Current_Cell.Value, "@") > 0 Then
+            If Current_Cell.PivotField.Value = "Recipient(s)" Then
                 Do
-                    If ActiveCell.Interior.ColorIndex <> xlNone And ActiveCell.PivotField.Value = "Recipient(s)" Then
-                        Set NewIncident = New Incident
-                        NewIncident.Sender = StoreSender
-                        NewIncident.Recipient = Replace(ActiveCell.Value, ", dlp@dlp.dlp", "")
-                        NewIncident.Recipient = Replace(NewIncident.Recipient, ", ", Chr(10))
-                        ActiveCell.Offset(1, 0).Select
-                        NewIncident.Policy = ActiveCell.Value
-                        ActiveCell.Offset(1, 0).Select
-                        NewIncident.ID = ActiveCell.Value
-                        IncidentData.Add NewIncident
-                        ActiveCell.Offset(1, 0).Select
-                        IncidentCounter = IncidentCounter + 1
-                    Else
-                        ActiveCell.Offset(1, 0).Select
+                    If Current_Cell.Interior.ColorIndex <> xlNone And Current_Cell.PivotField.Value = "Recipient(s)" Then
+                        Call inc(noOfIncidents)
                     End If
-                Loop Until ActiveCell.PivotField.Value = "Sender"
+                    Call inc(GlobalRowCounter)
+                Loop Until Current_Cell.PivotField.Value = "Sender"
             End If
         End If
+        Call inc(GlobalRowCounter)
+    Loop
+    
+    
+    Set IncidentData = New Collection
+    GlobalRowCounter = TableStart
+    
+    Do While IncidentCounter <> noOfIncidents
+            If Current_Cell.Interior.ColorIndex <> xlNone Then StoreSender = Current_Cell.Value
+            Call inc(GlobalRowCounter)
+            If Current_Cell.PivotField.Value = "Recipient(s)" Then
+                Do
+                    If Current_Cell.Interior.ColorIndex <> xlNone And Current_Cell.PivotField.Value = "Recipient(s)" Then
+                        Set NewIncident = New Incident
+                        NewIncident.Sender = StoreSender
+                        NewIncident.Recipient = Replace(Current_Cell.Value, ", dlp@dlp.dlp", "")
+                        NewIncident.Recipient = Replace(NewIncident.Recipient, ", ", Chr(10))
+                        For LoopCounter = 1 To 2
+                            Select Case Current_Cell.Offset(LoopCounter, 0).PivotField
+                                Case "Policy"
+                                    NewIncident.Policy = Current_Cell.Offset(LoopCounter, 0).Value
+                                Case "ID"
+                                    NewIncident.ID = Current_Cell.Offset(LoopCounter, 0).Value
+                            End Select
+                        Next LoopCounter
+                        IncidentData.Add NewIncident
+                        Call inc(IncidentCounter)
+                    End If
+                    Call inc(GlobalRowCounter)
+                Loop Until Current_Cell.PivotField.Value = "Sender"
+            End If
+        'End If
     Loop
            
     With ThisWorkbook
@@ -191,4 +215,17 @@ Function Get_Title_Date() As String
         Get_Title_Date = Format(Date - 3, "dd-mm-yyyy") & " - " & Format(Date - 1, "dd-mm-yyyy")
     End If
 End Function
+Function Check_If_At_Table(CellRange As Range) As Boolean
+    
+    On Error Resume Next
+    
+    If IsEmpty(CellRange.PivotField.Value) = False Then Check_If_At_Table = True
+    If Err <> 0 Then Check_If_At_Table = False
 
+End Function
+Function inc(Number As Integer)
+    Number = Number + 1
+End Function
+Function Current_Cell() As Range
+    Set Current_Cell = Cells(GlobalRowCounter, 1)
+End Function
