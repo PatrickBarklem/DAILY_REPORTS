@@ -18,6 +18,7 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     Dim TitleSizes(3) As Integer
     Dim StoreSender As String
     Dim TableStart As Integer
+    Dim noOfIncidents As Integer: noOfIncidents = 0
     
     GlobalRowCounter = 1
     
@@ -31,7 +32,7 @@ Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
     TitleSizes(2) = 36.86
     TitleSizes(3) = 35
     
-    noOfIncidents = 0
+    
 
     Worksheets("Sheet1").Activate   'Selects the sheet that contains the pivot table and goes to the first incident
 
