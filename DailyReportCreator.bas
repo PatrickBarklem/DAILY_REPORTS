@@ -1,10 +1,10 @@
 Attribute VB_Name = "DailyReportCreator"
 Public GlobalRowCounter As Integer
 
-Sub JLT_Daily_Report()
-Attribute JLT_Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
+Sub Daily_Report()
+Attribute Daily_Report.VB_ProcData.VB_Invoke_Func = "q\n14"
 '
-' JLT_Daily_Report Macro
+' Daily_Report Macro
 '
 ' Keyboard Shortcut: Ctrl+q
 '
